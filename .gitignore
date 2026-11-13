@@ -11,15 +11,14 @@ __pycache__/
 
 # Environment variables and secrets
 .env
+.env.*
+!.env.example
 
 # Jupyter
 .ipynb_checkpoints/
 
-# Generated vector database
-vectorstore/
-
-# Generated processed data
-data/processed/*
+# Generated processed data (except benchmark assets)
+data/processed/
 
 # Logs
 *.log
@@ -31,3 +30,7 @@ data/processed/*
 # OS files
 .DS_Store
 Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak

@@ -1,0 +1,82 @@
+[
+    {
+        "text": "Employee HR Policy\nNorthstar Solutions - Internal Knowledge Document\nCompany\nNorthstar Solutions is a fictional technology company used for this AI project.\nWorking Hours\nStandard working hours are 9:00 AM to 6:00 PM, Monday through Friday.\nRemote Work",
+        "metadata": {
+            "source": "Employee_HR_Policy.pdf",
+            "page": 1,
+            "chunk_number": 1
+        }
+    },
+    {
+        "text": "Remote Work\nEmployees may work remotely up to two days per week with manager approval.\nProbation\nNew employees have a probation period of six months.\nPerformance Reviews\nEmployee performance reviews take place every six months.\nEmployee Benefits",
+        "metadata": {
+            "source": "Employee_HR_Policy.pdf",
+            "page": 1,
+            "chunk_number": 2
+        }
+    },
+    {
+        "text": "Employee Benefits\nEligible full-time employees receive health insurance and professional development support.",
+        "metadata": {
+            "source": "Employee_HR_Policy.pdf",
+            "page": 1,
+            "chunk_number": 3
+        }
+    },
+    {
+        "text": "Information Security Policy\nNorthstar Solutions - Internal Knowledge Document\nPassword Requirements\nPasswords must contain at least 12 characters, including uppercase letters, lowercase letters,\nnumbers and special characters.\nMulti-Factor Authentication",
+        "metadata": {
+            "source": "Information_Security_Policy.pdf",
+            "page": 1,
+            "chunk_number": 1
+        }
+    },
+    {
+        "text": "Multi-Factor Authentication\nMulti-factor authentication is mandatory for company email, cloud platforms and internal business\napplications.\nData Access\nEmployees may access only the information required for their assigned job responsibilities.\nData Sharing",
+        "metadata": {
+            "source": "Information_Security_Policy.pdf",
+            "page": 1,
+            "chunk_number": 2
+        }
+    },
+    {
+        "text": "Data Sharing\nConfidential company information must not be shared with unauthorized individuals or personal\nemail accounts.\nSecurity Incidents\nSuspected security incidents must be reported to the IT security team within one hour of discovery.\nDevice Security",
+        "metadata": {
+            "source": "Information_Security_Policy.pdf",
+            "page": 1,
+            "chunk_number": 3
+        }
+    },
+    {
+        "text": "Device Security\nCompany laptops must use full-disk encryption and automatic screen locking.",
+        "metadata": {
+            "source": "Information_Security_Policy.pdf",
+            "page": 1,
+            "chunk_number": 4
+        }
+    },
+    {
+        "text": "Leave and Attendance Policy\nNorthstar Solutions - Internal Knowledge Document\nAnnual Leave\nFull-time employees receive 20 days of paid annual leave per calendar year.\nSick Leave\nEmployees receive 10 days of paid sick leave per calendar year.\nPublic Holidays",
+        "metadata": {
+            "source": "Leave_and_Attendance_Policy.pdf",
+            "page": 1,
+            "chunk_number": 1
+        }
+    },
+    {
+        "text": "Public Holidays\nThe company observes 12 public holidays each calendar year.\nLeave Approval\nPlanned leave requests should be submitted at least five working days in advance.\nEmergency Leave\nEmployees should notify their manager as soon as reasonably possible when emergency leave is\nrequired.",
+        "metadata": {
+            "source": "Leave_and_Attendance_Policy.pdf",
+            "page": 1,
+            "chunk_number": 2
+        }
+    },
+    {
+        "text": "required.\nAttendance\nEmployees are expected to record their attendance through the company's attendance system.\nLate Arrival\nEmployees arriving more than 15 minutes late should notify their manager.",
+        "metadata": {
+            "source": "Leave_and_Attendance_Policy.pdf",
+            "page": 1,
+            "chunk_number": 3
+        }
+    }
+]

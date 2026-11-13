@@ -1,0 +1,62 @@
+[
+  {
+    "question": "How many annual leave days are employees entitled to?",
+    "expected_chunk_ids": [7],
+    "answerable": true
+  },
+  {
+    "question": "How much sick leave can an employee take?",
+    "expected_chunk_ids": [7],
+    "answerable": true
+  },
+  {
+    "question": "How early must planned leave be requested?",
+    "expected_chunk_ids": [8],
+    "answerable": true
+  },
+  {
+    "question": "What happens if an employee arrives more than 15 minutes late?",
+    "expected_chunk_ids": [9],
+    "answerable": true
+  },
+  {
+    "question": "What is the minimum password length?",
+    "expected_chunk_ids": [3],
+    "answerable": true
+  },
+  {
+    "question": "When must employees report a security incident?",
+    "expected_chunk_ids": [5],
+    "answerable": true
+  },
+  {
+    "question": "Which authentication method is mandatory for company applications?",
+    "expected_chunk_ids": [4],
+    "answerable": true
+  },
+  {
+    "question": "What security measures are required for company laptops?",
+    "expected_chunk_ids": [6],
+    "answerable": true
+  },
+  {
+    "question": "How many days per week can employees work remotely?",
+    "expected_chunk_ids": [1],
+    "answerable": true
+  },
+  {
+    "question": "How long is the employee probation period?",
+    "expected_chunk_ids": [1],
+    "answerable": true
+  },
+  {
+    "question": "How frequently are employee performance reviews conducted?",
+    "expected_chunk_ids": [1],
+    "answerable": true
+  },
+  {
+    "question": "What is the company's maternity leave entitlement?",
+    "expected_chunk_ids": [],
+    "answerable": false
+  }
+]

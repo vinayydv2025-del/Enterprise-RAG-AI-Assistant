@@ -1,0 +1,64 @@
+
+[
+    {
+        "question": "How many annual leave days do employees receive?",
+        "expected_answer": "20 days",
+        "expected_source": "Leave_and_Attendance_Policy.pdf",
+        "should_answer": true
+    },
+    {
+        "question": "What are the password requirements?",
+        "expected_answer": "12 characters, uppercase, lowercase, numbers and special characters",
+        "expected_source": "Information_Security_Policy.pdf",
+        "should_answer": true
+    },
+    {
+        "question": "How many days per week can employees work remotely?",
+        "expected_answer": "2 days per week with manager approval",
+        "expected_source": "Employee_HR_Policy.pdf",
+        "should_answer": true
+    },
+    {
+        "question": "What is the probation period?",
+        "expected_answer": "6 months",
+        "expected_source": "Employee_HR_Policy.pdf",
+        "should_answer": true
+    },
+    {
+        "question": "What is the company's maternity leave policy?",
+        "expected_answer": "I could not find this information",
+        "expected_source": null,
+        "should_answer": false
+    }
+    ,
+    {
+        "question": "How many public holidays do employees receive?",
+        "expected_answer": "12 public holidays",
+        "expected_source": "Leave_and_Attendance_Policy.pdf",
+        "should_answer": true
+    },
+    {
+        "question": "How early should employees apply for planned leave?",
+        "expected_answer": "5 working days ahead",
+        "expected_source": "Leave_and_Attendance_Policy.pdf",
+        "should_answer": true
+    },
+    {
+        "question": "How quickly must employees report security incidents?",
+        "expected_answer": "within one hour",
+        "expected_source": "Information_Security_Policy.pdf",
+        "should_answer": true
+    },
+    {
+        "question": "What are the company's standard working hours?",
+        "expected_answer": "9 AM to 6 PM Monday to Friday",
+        "expected_source": "Employee_HR_Policy.pdf",
+        "should_answer": true
+    },
+    {
+        "question": "How often are employee performance reviews conducted?",
+        "expected_answer": "every 6 months",
+        "expected_source": "Employee_HR_Policy.pdf",
+        "should_answer": true
+    }
+]

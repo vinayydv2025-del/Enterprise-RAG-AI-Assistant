@@ -10,7 +10,7 @@ torch
 accelerate
 python-dotenv
 fastapi
-uvicorn
+uvicorn[standard]
 streamlit
 pydantic
 pandas
@@ -18,3 +18,5 @@ numpy
 reportlab
 pytest
 httpx
+rank-bm25
+requests

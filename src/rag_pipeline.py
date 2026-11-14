@@ -25,14 +25,51 @@ load_dotenv(BASE_DIR / ".env")
 
 EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"
 
-MODEL_NAME = os.getenv("OLLAMA_MODEL", "llama3.2:3b")
+# Select the LLM provider:
+# ollama = local development
+# groq = cloud deployment
+
+LLM_PROVIDER = os.getenv(
+    "LLM_PROVIDER",
+    "ollama"
+).strip().lower()
+
+# Ollama configuration
+
+MODEL_NAME = os.getenv(
+    "OLLAMA_MODEL",
+    "llama3.2:3b"
+)
 
 OLLAMA_URL = os.getenv(
     "OLLAMA_URL",
     "http://localhost:11434/api/generate"
 ).strip()
 
-OLLAMA_TIMEOUT = int(os.getenv("OLLAMA_TIMEOUT", "300"))
+OLLAMA_TIMEOUT = int(
+    os.getenv("OLLAMA_TIMEOUT", "300")
+)
+
+# Groq configuration
+
+GROQ_API_KEY = os.getenv(
+    "GROQ_API_KEY",
+    ""
+).strip()
+
+GROQ_MODEL = os.getenv(
+    "GROQ_MODEL",
+    "openai/gpt-oss-20b"
+).strip()
+
+GROQ_BASE_URL = os.getenv(
+    "GROQ_BASE_URL",
+    "https://api.groq.com/openai/v1"
+).strip()
+
+GROQ_TIMEOUT = int(
+    os.getenv("GROQ_TIMEOUT", "120")
+)
 
 UNSUPPORTED_ANSWER = (
     "I could not find this information "
@@ -63,6 +100,7 @@ DATASETS = {
 
 @lru_cache(maxsize=1)
 def get_embedding_model():
+
     print("Loading embedding model...", flush=True)
 
     return SentenceTransformer(EMBEDDING_MODEL_NAME)
@@ -201,11 +239,11 @@ def merge_overlapping_chunks(chunk_texts):
     return merged_text.strip()
 
 
+
 def reconstruct_page_context(
     original_chunks,
     validated_evidence
 ):
-
     reconstructed_pages = []
     seen_pages = set()
 
@@ -213,6 +251,7 @@ def reconstruct_page_context(
 
         source = evidence["source"]
         page = evidence["page"]
+        statement = evidence.get("statement", "").strip()
 
         page_key = (source, str(page))
 
@@ -241,6 +280,14 @@ def reconstruct_page_context(
             page_texts
         )
 
+        # Preserve the exact verified statement.
+        if statement and statement not in complete_page_text:
+            complete_page_text = (
+                complete_page_text
+                + "\n\nVerified evidence:\n"
+                + statement
+            )
+
         if complete_page_text:
 
             reconstructed_pages.append({
@@ -252,14 +299,12 @@ def reconstruct_page_context(
     return reconstructed_pages
 
 
+
 # ============================================================
-# 5. GENERATE ANSWER USING OLLAMA
+# 5. BUILD LLM PROMPT
 # ============================================================
 
-def generate_answer(question, retrieved_chunks):
-
-    if not retrieved_chunks:
-        return UNSUPPORTED_ANSWER
+def build_answer_prompt(question, retrieved_chunks):
 
     context_parts = []
 
@@ -307,6 +352,15 @@ Provide the answer based strictly on the context.
 ANSWER:
 """
 
+    return prompt
+
+
+# ============================================================
+# 6. GENERATE ANSWER USING OLLAMA
+# ============================================================
+
+def generate_with_ollama(prompt):
+
     payload = {
         "model": MODEL_NAME,
         "prompt": prompt,
@@ -345,30 +399,6 @@ ANSWER:
                 "Ollama returned an empty answer."
             )
 
-        # Generate citations using actual validated context.
-        source_citations = []
-        seen = set()
-
-        for chunk in retrieved_chunks:
-
-            citation = (
-                chunk["source"],
-                str(chunk["page"])
-            )
-
-            if citation not in seen:
-                source_citations.append(
-                    (chunk["source"], chunk["page"])
-                )
-                seen.add(citation)
-
-        if source_citations:
-
-            answer += "\n\nSources:"
-
-            for source, page in source_citations:
-                answer += f"\n- {source}, Page {page}"
-
         return answer
 
     except urllib.error.HTTPError as error:
@@ -399,7 +429,137 @@ ANSWER:
 
 
 # ============================================================
-# 6. SHARED RAG EXECUTION
+# 7. GENERATE ANSWER USING GROQ
+# ============================================================
+
+def generate_with_groq(prompt):
+
+    if not GROQ_API_KEY:
+
+        raise RuntimeError(
+            "GROQ_API_KEY is missing. "
+            "Add it to your local .env file or cloud secrets."
+        )
+
+    try:
+
+        from openai import OpenAI
+
+        client = OpenAI(
+            api_key=GROQ_API_KEY,
+            base_url=GROQ_BASE_URL,
+            timeout=GROQ_TIMEOUT
+        )
+
+        response = client.chat.completions.create(
+            model=GROQ_MODEL,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a careful enterprise knowledge "
+                        "assistant. Answer only from the supplied "
+                        "document context. Never invent facts "
+                        "or citations."
+                    )
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+        )
+
+        answer = response.choices[0].message.content
+
+        if not answer or not answer.strip():
+
+            raise RuntimeError(
+                "Groq returned an empty answer."
+            )
+
+        return answer.strip()
+
+    except ImportError as error:
+
+        raise RuntimeError(
+            "The OpenAI Python package is not installed. "
+            "Run: pip install openai"
+        ) from error
+
+    except Exception as error:
+
+        raise RuntimeError(
+            f"Groq generation failed: {str(error)}"
+        ) from error
+
+
+# ============================================================
+# 8. GENERATE ANSWER WITH SELECTED PROVIDER
+# ============================================================
+
+def generate_answer(question, retrieved_chunks):
+
+    if not retrieved_chunks:
+        return UNSUPPORTED_ANSWER
+
+    prompt = build_answer_prompt(
+        question,
+        retrieved_chunks
+    )
+
+    print(
+        f"\nGenerating answer using {LLM_PROVIDER.upper()}...",
+        flush=True
+    )
+
+    if LLM_PROVIDER == "ollama":
+
+        answer = generate_with_ollama(prompt)
+
+    elif LLM_PROVIDER == "groq":
+
+        answer = generate_with_groq(prompt)
+
+    else:
+
+        raise ValueError(
+            f"Unsupported LLM_PROVIDER: {LLM_PROVIDER}. "
+            "Choose 'ollama' or 'groq'."
+        )
+
+    # Generate citations using actual validated context.
+    source_citations = []
+    seen = set()
+
+    for chunk in retrieved_chunks:
+
+        citation = (
+            chunk["source"],
+            str(chunk["page"])
+        )
+
+        if citation not in seen:
+
+            source_citations.append(
+                (chunk["source"], chunk["page"])
+            )
+
+            seen.add(citation)
+
+    if source_citations:
+
+        answer += "\n\nSources:"
+
+        for source, page in source_citations:
+
+            answer += f"\n- {source}, Page {page}"
+
+    return answer
+
+
+# ============================================================
+# 9. SHARED RAG EXECUTION
 # ============================================================
 
 def run_rag_with_components(
@@ -601,7 +761,7 @@ def run_rag_with_components(
 
 
 # ============================================================
-# 7. STANDALONE RAG PIPELINE
+# 10. STANDALONE RAG PIPELINE
 # ============================================================
 
 def run_rag(question, dataset="northstar"):

@@ -49,13 +49,13 @@ PHRASE_ALIASES = {
 
     # Security
     "principle of least privilege":
-        "least_privilege access_control_principle",
+    "least_privilege access_control_principle",
     "least privilege":
-        "least_privilege access_control_principle",
+    "least_privilege access_control_principle",
     "minimum necessary permissions":
-        "least_privilege access_control_principle",
+    "least_privilege access_control_principle",
     "minimum required permissions":
-        "least_privilege access_control_principle",
+    "least_privilege access_control_principle",
     "access control principle": "access_control_principle",
     "access control model": "access_control_principle",
     "multi factor authentication": "mfa",
@@ -189,6 +189,15 @@ PHRASE_ALIASES = {
     "course reimbursement": "professional_course",
     "certification reimbursement": "certification_reimbursement",
     "professional development reimbursement": "professional_course",
+    "professional course cert reimbursement": "professional_course",
+    "professional course certification reimbursement": "professional_course",
+    "professional courses certifications reimbursement": "professional_course",
+    "professional courses and certifications": "professional_course",
+    "course certification reimbursement": "professional_course",
+    "course and certification reimbursement": "professional_course",
+    "professional course cert": "professional_course",
+    "professional course certification": "professional_course",
+    "annual professional course reimbursement": "professional_course",
 
     # Apex security
     "security updates": "security_update",
@@ -846,7 +855,7 @@ def verify_numeric_limit(question: str, evidence: Any):
             "month", "months", "monthly"
         },
         "year": {
-            "year", "years", "yearly", "annually"
+            "year", "years", "yearly", "annually", "annual"
         },
         "hour": {
             "hour", "hours", "hourly"

@@ -20,3 +20,4 @@ pytest
 httpx
 rank-bm25
 requests
+openai

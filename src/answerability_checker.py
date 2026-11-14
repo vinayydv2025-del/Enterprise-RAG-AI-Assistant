@@ -878,70 +878,39 @@ def verify_evidence(question, evidence):
 # 13. MAIN ANSWERABILITY PIPELINE
 # ============================================================
 
+
 def check_answerability(
     question,
     retrieved_chunks
 ):
+    """
+    Check whether retrieved document chunks contain sufficient
+    evidence to answer the question.
+
+    This implementation does not require Ollama or any external
+    LLM for evidence extraction, making it cloud-compatible.
+    """
 
     if not retrieved_chunks:
-
         return {
             "supported": False,
             "reason": "No document evidence was retrieved.",
             "evidence": [],
         }
 
-    context = build_context(
-        retrieved_chunks
+    # Stage 1: Recover evidence directly from retrieved chunks.
+    evidence = recover_evidence_from_chunks(
+        question,
+        retrieved_chunks,
     )
 
-    # Stage 1: LLM evidence extraction.
-    try:
-
-        llm_evidence = extract_evidence(
-            question,
-            context,
-            retrieved_chunks,
-        )
-
-    except (
-        urllib.error.URLError,
-        urllib.error.HTTPError,
-        json.JSONDecodeError,
-        KeyError,
-        ValueError,
-        TypeError,
-        OSError,
-    ) as error:
-
-        print(
-            "LLM evidence extraction failed:",
-            error,
-        )
-
-        llm_evidence = []
-
-    # Stage 2: Recover evidence directly from retrieved chunks.
-    recovered_evidence = (
-        recover_evidence_from_chunks(
-            question,
-            retrieved_chunks,
-        )
-    )
-
-    # Stage 3: Combine and deduplicate.
-    evidence = combine_evidence(
-        llm_evidence,
-        recovered_evidence,
-    )
-
-    # Stage 4: Apply strict question-specific relevance filtering.
+    # Stage 2: Apply strict question-specific relevance filtering.
     evidence = filter_evidence_for_question(
         question,
         evidence,
     )
 
-    # Stage 5: Deterministic verification.
+    # Stage 3: Perform deterministic evidence verification.
     verification = verify_evidence(
         question,
         evidence,
@@ -952,9 +921,3 @@ def check_answerability(
         "reason": verification["reason"],
         "evidence": evidence,
     }
-
-
-
-
-
-

@@ -1,5 +1,7 @@
 # Enterprise RAG AI Assistant
 
+🚀 **Live Demo:** https://enterprise-rag-ai-assistant-9mqcsujrcxww8qlybvxuma.streamlit.app/
+
 An advanced, end-to-end **Retrieval-Augmented Generation (RAG)** application designed to answer enterprise questions using internal company policy documents.
 
 The system combines **Dense Vector Search, BM25 Keyword Retrieval, Reciprocal Rank Fusion (RRF), Cross-Encoder Reranking, and Answerability Verification** to retrieve relevant evidence and generate context-grounded answers using a locally hosted Large Language Model.

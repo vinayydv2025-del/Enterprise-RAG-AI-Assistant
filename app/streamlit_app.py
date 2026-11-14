@@ -1,26 +1,19 @@
 
 import os
+import sys
+from pathlib import Path
+
 import streamlit as st
-import requests
 
 
 # ============================================================
-# CONFIGURATION
+# 1. PROJECT CONFIGURATION
 # ============================================================
 
-API_BASE_URL = os.getenv(
-    "API_URL",
-    "http://127.0.0.1:8000"
-).rstrip("/")
+BASE_DIR = Path(__file__).resolve().parent.parent
 
-API_URL = f"{API_BASE_URL}/ask"
-
-REQUEST_TIMEOUT = 300
-
-
-# ============================================================
-# PAGE CONFIGURATION
-# ============================================================
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
 
 st.set_page_config(
     page_title="Advanced Enterprise RAG AI Assistant",
@@ -30,7 +23,79 @@ st.set_page_config(
 
 
 # ============================================================
-# HEADER
+# 2. CLOUD SECRETS AND GROQ CONFIGURATION
+# ============================================================
+
+try:
+    cloud_api_key = st.secrets.get("GROQ_API_KEY", "")
+except Exception:
+    cloud_api_key = ""
+
+if cloud_api_key:
+    os.environ["GROQ_API_KEY"] = str(cloud_api_key)
+
+# This Streamlit application always uses Groq.
+os.environ["LLM_PROVIDER"] = "groq"
+
+for secret_name in (
+    "GROQ_MODEL",
+    "GROQ_BASE_URL",
+    "GROQ_TIMEOUT"
+):
+    try:
+        secret_value = st.secrets.get(secret_name)
+    except Exception:
+        secret_value = None
+
+    if secret_value:
+        os.environ[secret_name] = str(secret_value)
+
+
+# Import after configuring environment variables.
+from src.rag_pipeline import (
+    DATASETS,
+    GROQ_API_KEY,
+    load_rag_components,
+    run_rag_with_components,
+)
+
+from src.hybrid_retriever import HybridRetriever
+from src.reranker import CrossEncoderReranker
+
+
+# ============================================================
+# 3. CACHE MODELS AND RETRIEVAL COMPONENTS
+# ============================================================
+
+@st.cache_resource(max_entries=1, show_spinner=False)
+def load_dataset_resources(dataset_name):
+
+    embedding_model, index, chunks = load_rag_components(
+        dataset_name
+    )
+
+    hybrid_retriever = HybridRetriever(
+        embedding_model,
+        index,
+        chunks
+    )
+
+    return (
+        embedding_model,
+        index,
+        chunks,
+        hybrid_retriever
+    )
+
+
+@st.cache_resource(show_spinner=False)
+def load_reranker():
+
+    return CrossEncoderReranker()
+
+
+# ============================================================
+# 4. APPLICATION HEADER
 # ============================================================
 
 st.title("🤖 Advanced Enterprise RAG AI Assistant")
@@ -40,23 +105,25 @@ st.write(
     "document-grounded answers with evidence verification."
 )
 
-st.caption("Powered by Hybrid Retrieval, BM25, FAISS and Cross-Encoder Reranking")
+st.caption(
+    "Powered by FAISS, BM25, Hybrid Retrieval, "
+    "Cross-Encoder Reranking and Groq."
+)
 
 st.divider()
 
 
 # ============================================================
-# API CONNECTION
+# 5. USER INPUT
 # ============================================================
 
-with st.expander("API Configuration"):
+st.subheader("Ask your question")
 
-    st.write(f"**API Endpoint:** `{API_URL}`")
-
-
-# ============================================================
-# QUESTION INPUT
-# ============================================================
+dataset = st.selectbox(
+    "Select knowledge base:",
+    options=list(DATASETS.keys()),
+    format_func=lambda value: value.title()
+)
 
 question = st.text_input(
     "Enter your question:",
@@ -65,151 +132,163 @@ question = st.text_input(
 
 
 # ============================================================
-# ASK AI
+# 6. EXECUTE RAG PIPELINE
 # ============================================================
 
-if st.button("Ask AI", type="primary"):
+if st.button("Ask AI", type="primary", use_container_width=True):
 
     if not question.strip():
 
         st.warning("Please enter a question.")
 
+    elif len(question.strip()) < 3:
+
+        st.warning("Please enter a more detailed question.")
+
+    elif not GROQ_API_KEY:
+
+        st.error(
+            "Groq API key is missing. "
+            "Configure GROQ_API_KEY in your environment or "
+            "Streamlit Secrets."
+        )
+
     else:
 
-        with st.spinner(
-            "Retrieving documents, reranking and verifying evidence..."
-        ):
+        try:
 
-            try:
+            with st.spinner(
+                "Loading retrieval models and knowledge base..."
+            ):
 
-                response = requests.post(
-                    API_URL,
-                    json={"question": question.strip()},
-                    timeout=REQUEST_TIMEOUT
+                (
+                    embedding_model,
+                    index,
+                    chunks,
+                    hybrid_retriever
+                ) = load_dataset_resources(dataset)
+
+                reranker = load_reranker()
+
+            with st.spinner(
+                "Retrieving documents, reranking and verifying evidence..."
+            ):
+
+                result = run_rag_with_components(
+                    question=question.strip(),
+                    dataset=dataset,
+                    embedding_model=embedding_model,
+                    index=index,
+                    chunks=chunks,
+                    hybrid_retriever=hybrid_retriever,
+                    reranker=reranker
                 )
 
-                response.raise_for_status()
+            # -----------------------------------------------
+            # ANSWER
+            # -----------------------------------------------
 
-                result = response.json()
+            st.divider()
 
-                # Validate required response fields
-                required_fields = [
-                    "answer",
-                    "evidence_supported",
-                    "verification_reason",
-                    "sources"
-                ]
+            st.subheader("AI Generated Answer")
 
-                missing_fields = [
-                    field for field in required_fields
-                    if field not in result
-                ]
+            st.write(result["answer"])
 
-                if missing_fields:
+            # -----------------------------------------------
+            # EVIDENCE VERIFICATION
+            # -----------------------------------------------
 
-                    st.error(
-                        f"API response is missing fields: {missing_fields}"
+            st.subheader("Evidence Verification")
+
+            if result["supported"]:
+
+                st.success("Evidence supported")
+
+            else:
+
+                st.warning("Evidence not found")
+
+            st.write(
+                "**Verification reason:**",
+                result["reason"]
+            )
+
+            # -----------------------------------------------
+            # VALIDATED SOURCES
+            # -----------------------------------------------
+
+            st.subheader("Validated Evidence Sources")
+
+            sources = result.get("sources", [])
+
+            if sources:
+
+                for source in sources:
+
+                    label = (
+                        f"📄 {source['source']} "
+                        f"— Page {source['page']}"
                     )
+
+                    with st.expander(label):
+
+                        if source.get("statement"):
+
+                            st.write(
+                                source["statement"]
+                            )
+
+            else:
+
+                st.info("No validated sources found.")
+
+            # -----------------------------------------------
+            # RETRIEVAL DIAGNOSTICS
+            # -----------------------------------------------
+
+            with st.expander("Retrieval Diagnostics"):
+
+                retrieved = result.get(
+                    "retrieved_sources",
+                    []
+                )
+
+                if retrieved:
+
+                    for item in retrieved:
+
+                        st.write(
+                            f"**{item['source']}** | "
+                            f"Page {item['page']}"
+                        )
+
+                        st.caption(
+                            f"RRF Score: {item.get('rrf_score', 0):.4f} | "
+                            f"Cross-Encoder Score: "
+                            f"{item.get('rerank_score', 0):.4f}"
+                        )
 
                 else:
 
-                    # ----------------------------------------
-                    # ANSWER
-                    # ----------------------------------------
+                    st.info("No documents retrieved.")
 
-                    st.subheader("AI Generated Answer")
+        except Exception as error:
 
-                    st.write(result["answer"])
-
-                    # ----------------------------------------
-                    # EVIDENCE VERIFICATION
-                    # ----------------------------------------
-
-                    st.subheader("Evidence Verification")
-
-                    if result["evidence_supported"]:
-
-                        st.success("Evidence supported")
-
-                    else:
-
-                        st.warning("Evidence not found")
-
-                    st.write(
-                        "**Verification reason:**",
-                        result["verification_reason"]
-                    )
-
-                    # ----------------------------------------
-                    # SOURCES
-                    # ----------------------------------------
-
-                    st.subheader("Retrieved Sources")
-
-                    if result["sources"]:
-
-                        for source in result["sources"]:
-
-                            with st.expander(
-                                f"📄 {source['source']} — Page {source['page']}"
-                            ):
-
-                                st.write(
-                                    f"**RRF Score:** "
-                                    f"{source.get('rrf_score', 'N/A')}"
-                                )
-
-                                st.write(
-                                    f"**Cross-Encoder Score:** "
-                                    f"{source.get('rerank_score', 'N/A')}"
-                                )
-
-                    else:
-
-                        st.info("No relevant sources found.")
-
-            except requests.exceptions.Timeout:
-
-                st.error(
-                    "The API request timed out. "
-                    "The RAG pipeline may need more processing time."
-                )
-
-            except requests.exceptions.ConnectionError:
-
-                st.error(
-                    "Could not connect to the FastAPI backend. "
-                    "Check that the API server is running and API_URL is correct."
-                )
-
-            except requests.exceptions.HTTPError as error:
-
-                st.error(
-                    f"API returned an HTTP error: {error}"
-                )
-
-            except requests.exceptions.RequestException as error:
-
-                st.error(
-                    f"Request failed: {error}"
-                )
-
-            except (ValueError, KeyError, TypeError) as error:
-
-                st.error(
-                    f"Unexpected API response: {error}"
-                )
+            st.error(
+                f"RAG processing failed: {error}"
+            )
 
 
 # ============================================================
-# FOOTER
+# 7. FOOTER
 # ============================================================
 
 st.divider()
 
 st.caption(
-    "Powered by Python | FAISS | BM25 | "
-    "Cross-Encoder | Sentence Transformers | Ollama"
+    "Python | FAISS | BM25 | Sentence Transformers | "
+    "Cross-Encoder | FastAPI-compatible RAG pipeline | Groq"
 )
+
 
 
